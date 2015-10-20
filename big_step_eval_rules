@@ -1,0 +1,156 @@
+BIG STEP EVALUATION RULES FOR A4 BNF:
+
+help:
+http://caml.inria.fr/pub/docs/u3-ocaml/ocaml-ml.html
+
+=================================================
+
+Primitive Types:
+| () | i | b | s | x
+<env, ()> ==> Unit
+
+<env, i> ==> Int i
+
+<env, b> ==> Bool b
+
+<env, s> ==> Var s
+
+<env, x> ==> v
+  if env(x) = v
+
+=================================================
+
+Binary Operations:
+| e1 bop e2
+
+<env, (Plus, e1, e2)> ==> Int n
+  if <env, e1> ==> Int n1
+  and <env,e2> ==> Int n2
+  and n = n1 + n2
+
+<env, (Minus, e1, e2> ==> Int n
+  if <env, e1> ==> Int n1
+  and <env,e2> ==> Int n2
+  and n = n1 - n2
+
+<env, (Times, e1, e2)> ==> Int n
+  if <env, e1> ==> Int n1
+  and <env,e2> ==> Int n2
+  and n = n1 * n2
+
+<env, (Lt, e1, e2)> ==> Bool b
+  if <env, e1>  ==> Int n1
+  and <env, e2> ==> Int n2
+  and b = n1 < n2
+
+<env, (Gt, e1, e2)> ==> Bool b
+  if <env, e1>  ==> Int n1
+  and <env, e2> ==> Int n2
+  and b = n1 > n2
+
+<env, (GtEq, e1, e2)> ==> Bool b
+  if <env, e1>  ==> Int n1
+  and <env, e2> ==> Int n2
+  and b = n1 >= n2
+
+<env, (LtEq, e1, e2)> ==> Bool b
+  if <env, e1>  ==> Int n1
+  and <env, e2> ==> Int n2
+  and b = n1 <= n2
+
+<env, (NotEq, e1, e2)> ==> Bool b
+  if <env, e1>  ==> Int n1
+  and <env, e2> ==> Int n2
+  and b = n1 <> n2
+
+<env, (Concat, e1, e2)> ==> String s
+  if <env, e1> ==> String s1
+  and <env, e2> ==> String s2
+  and s = s1^s2
+
+
+=================================================
+
+
+If e1 then e2 else e3
+
+<env, if Bool e then e1 else e2> ==> v1
+  if <env, Bool e> ==> Bool true
+  and <env, e1> ==> v1
+
+<env, if Bool e then e1 else e2> ==> v2
+  if <env, Bool e> ==> Bool false
+  and <env, e2> ==> v2
+
+
+=================================================
+
+
+let x = e1 in e2
+
+<env, Let(x, Var e1, Var e2) ==> v2
+  if <env, Var e1> ==> v1
+  and <env[x->v1], Var e2> ==> v2
+
+
+## OFFICE HOURS
+let rec x = e1 in e2
+
+<env, LetRec(x, Var e1, Var e2) ==> v2
+  if <env, Var
+
+
+=================================================
+
+
+e1 e2
+## OFFICE HOURS? WHAT DOES THIS MEAN?
+<env, e1 e2> ==> v
+  if <env, e1> ==> {fun x -> e | defenv}
+  and <env, e2> ==> v2
+  and <defenv[x->v2], e> ==> v
+
+
+#<env, App (e1, e2)> ==> v1 v2
+#  if <env, e1> ==> v1
+#  and <env, e2> ==> v2
+
+
+=================================================
+
+
+## ASK ABOUT THIS TOO? OCAML SHOULD JUST BE ABLE TO KEEP TRACK OF DEFENV?
+<env, Fun (x, e)> ==> {fun x -> e | env}
+
+
+=================================================
+
+
+(e1,e2)
+
+<env, Pair (e1, e2)> ==> (v1,v2)
+  if <env, e1> ==> v1
+  and <env, e2> ==> v2
+
+
+=================================================
+
+
+## ASK ABOUT THIS TOO?
+C e
+ex: parse_expr "Int 3"  =  expr = Variant ("Int", Int 3)
+
+<env, Variant(s, e)> ==> s v
+  if <env, e> ==> v
+
+
+=================================================
+
+match e with p1 -> e1 | ... | pn -> en
+
+<env, Match(e, [(pattern p1, e1), ... (pattern pn, en)]> ==> vi
+  if <env, e> ==> pi
+  and <env[pi->v], ei> ==> vi
+
+
+=================================================
