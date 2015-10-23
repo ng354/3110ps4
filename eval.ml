@@ -83,6 +83,24 @@ let rec bin_operation op e1 e2 =
   | (Concat, VString s1, VString s2) -> VString(s1^s2)
   | _-> VError "Not a valid value"
 
+let rec if_then e1 e2 e3 =
+  match (e1,e2,e3) with
+  |
+
+  (* If (BinOp (Ast.Eq, Int 3, Int 3), Int 4, Int 6) *)
+
+
+
+(* <env, if Bool e then e1 else e2> ==> v1
+  if <env, Bool e> ==> Bool true
+  and <env, e1> ==> v1
+
+<env, if Bool e then e1 else e2> ==> v2
+  if <env, Bool e> ==> Bool false
+  and <env, e2> ==> v2 *)
+
+
+
 let rec eval env e =
   match e with
   | Int n ->  VInt(n)
@@ -93,6 +111,12 @@ let rec eval env e =
     let expr2 = eval env e2 in
     bin_operation op expr1 expr2
   | If (e1,e2,e3) -> failwith "unimplemented"
+    let expr1 = eval env e1 in
+    let expr2 = eval env e2 in
+    let expr3 = eval env e3 in
+    if_then expr1 expr2 expr3
+
+
   | Var x -> !(List.assoc x env)
   | Let (v,e1,e2) -> failwith "unimplemented"
   | LetRec (v,e1,e2) -> failwith "unimplemented"
