@@ -69,5 +69,37 @@ let string_of_value = Printer.make_string_of format_value
 (** eval **********************************************************************)
 (******************************************************************************)
 
+let rec bin_operation op e1 e2 =
+  match (op, e1, e2) with
+  | (Plus, VInt n1, VInt n2) -> VInt (n1+n2)
+  | (Minus, VInt n1, VInt n2) -> VInt (n1-n2)
+  | (Times, VInt n1, VInt n2) -> VInt (n1*n2)
+  | (Gt, VInt n1, VInt n2) -> VBool(n1>n2)
+  | (Lt, VInt n1, VInt n2) -> VBool(n1<n2)
+  | (Eq, VInt n1, VInt n2) -> VBool(n1=n2)
+  | (GtEq, VInt n1, VInt n2) -> VBool(n1>=n2)
+  | (LtEq, VInt n1, VInt n2) -> VBool(n1<=n2)
+  | (NotEq, VInt n1, VInt n2) -> VBool(n1<>n2)
+  | (Concat, VString s1, VString s2) -> VString(s1^s2)
+  | _-> VError "Not a valid value"
+
 let rec eval env e =
-  failwith "unimplemented"
+  match e with
+  | Int n ->  VInt(n)
+  | Bool b -> VBool(b)
+  | String s ->  VString(s)
+  | BinOp (op, e1,e2)  ->
+    let expr1 = eval env e1 in
+    let expr2 = eval env e2 in
+    bin_operation op expr1 expr2
+  | If (e1,e2,e3) -> failwith "unimplemented"
+  | Var x -> !(List.assoc x env)
+  | Let (v,e1,e2) -> failwith "unimplemented"
+  | LetRec (v,e1,e2) -> failwith "unimplemented"
+  | App(e1,e2) -> failwith "unimplemented"
+  | Fun (v,e) -> failwith "unimplemented"
+  | Pair (e1,e2) -> failwith "unimplemented"
+  | Variant (c, e1) -> failwith "unimplemented"
+  | Match (e1, p) -> failwith "unimplemented"
+  | _ -> failwith "unimplemented"
+
