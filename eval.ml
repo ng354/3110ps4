@@ -84,22 +84,10 @@ let rec bin_operation op e1 e2 =
   | _-> VError "Not a valid value"
 
 let rec if_then e1 e2 e3 =
-  match (e1,e2,e3) with
-  |
-
-  (* If (BinOp (Ast.Eq, Int 3, Int 3), Int 4, Int 6) *)
-
-
-
-(* <env, if Bool e then e1 else e2> ==> v1
-  if <env, Bool e> ==> Bool true
-  and <env, e1> ==> v1
-
-<env, if Bool e then e1 else e2> ==> v2
-  if <env, Bool e> ==> Bool false
-  and <env, e2> ==> v2 *)
-
-
+  match e1 with
+  | VBool true -> e2
+  | VBool false -> e3
+  | _ -> VError "Not a valid value"
 
 let rec eval env e =
   match e with
@@ -110,13 +98,11 @@ let rec eval env e =
     let expr1 = eval env e1 in
     let expr2 = eval env e2 in
     bin_operation op expr1 expr2
-  | If (e1,e2,e3) -> failwith "unimplemented"
+  | If (e1,e2,e3) ->
     let expr1 = eval env e1 in
     let expr2 = eval env e2 in
     let expr3 = eval env e3 in
     if_then expr1 expr2 expr3
-
-
   | Var x -> !(List.assoc x env)
   | Let (v,e1,e2) -> failwith "unimplemented"
   | LetRec (v,e1,e2) -> failwith "unimplemented"

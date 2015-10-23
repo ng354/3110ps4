@@ -62,9 +62,18 @@ TEST_UNIT = eval [] (BinOp (GtEq, BinOp (Times, Int 10, BinOp (Plus, Int 3, Int 
 TEST_UNIT = eval [] (BinOp (Concat, String("hello "), String("goodbye"))) === VString "hello goodbye"
 TEST_UNIT = eval [] ( BinOp (Concat, Bool true, String "goodbye")) === VError "Not a valid value"
 
+(* End of BinOp tests *)
+
+(* Test if-then-else *)
+TEST_UNIT = eval [] (If(Bool true, Int 4, Int 6)) === VInt 4
+TEST_UNIT = eval [] (If(Bool false, Int 4, Int 6)) === VInt 6
+TEST_UNIT = eval [] (If(Bool false, Int 4, String "false!!")) === VString "false!!"
+TEST_UNIT = eval [] (If(BinOp (Gt, Int 3, Int 2), Int 4, Int 6)) === VInt 4
 
 (* Test Var *)
 let var_env = ("x", ref (VInt 5))::[]
 TEST_UNIT = eval var_env (Var "x") === VInt 5
+
+
 
 let () = Pa_ounit_lib.Runtime.summarize()
