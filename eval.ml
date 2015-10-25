@@ -89,6 +89,14 @@ let rec if_then e1 e2 e3 =
   | VBool false -> e3
   | _ -> VError "Not a valid value"
 
+
+(* let rec appl env e1 e2 = eval e1 and match on that vclosure (var, expr, env) change env in vlosure case
+and call eval on new environment and e1.
+e2 used in making new environment
+var e1 and another env in VClosure. then call eval again, have a new environment, ref var e2:: envr closure
+  match (e1, e2) with
+  | *)
+
 let rec eval env e =
   match e with
   | Int n ->  VInt(n)
@@ -106,7 +114,10 @@ let rec eval env e =
   | Var x -> !(List.assoc x env)
   | Let (v,e1,e2) -> failwith "unimplemented"
   | LetRec (v,e1,e2) -> failwith "unimplemented"
-  | App(e1,e2) -> failwith "unimplemented"
+  | App(e1,e2) -> failwith "unimplemented" (*match on the function call match with Vclosure*)
+    (* let expr1 = eval env e1 in
+    let expr2 = eval env e2 in
+    appl env expr1 expr2 *)
   | Fun (v,e) -> failwith "unimplemented"
   | Pair (e1,e2) -> failwith "unimplemented"
   | Variant (c, e1) -> failwith "unimplemented"
