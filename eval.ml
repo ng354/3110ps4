@@ -89,13 +89,23 @@ let rec if_then e1 e2 e3 =
   | VBool false -> e3
   | _ -> VError "Not a valid value"
 
+(* [change_env env v e1] Returns new env without binding x, if x not in list,
+* returns dup. Then adds the new binding (x,e2) to the environment for e1
+* - [env] the previous environment before change_env was called
+* - [v] the string variable name
+* - [e1] the expression that will be bound to v *)
+let change_env env v e1 =
+  let removed_from_env = List.remove_assoc v env in
+  (v,ref e1)::removed_from_env
 
-(* let rec appl env e1 e2 = eval e1 and match on that vclosure (var, expr, env) change env in vlosure case
-and call eval on new environment and e1.
-e2 used in making new environment
-var e1 and another env in VClosure. then call eval again, have a new environment, ref var e2:: envr closure
-  match (e1, e2) with
-  | *)
+(* [app_env env e1 e2] will return new environment for the function e1
+* with the new binding from e2 so that we can make the appropriate closure *)
+let app_env env e1 e2 =
+  match e1 with
+  | Fun(x,e) ->
+    change_env env x e2
+  | _ -> env
+
 
 let rec eval env e =
   match e with
@@ -112,15 +122,27 @@ let rec eval env e =
     let expr3 = eval env e3 in
     if_then expr1 expr2 expr3
   | Var x -> !(List.assoc x env)
-  | Let (v,e1,e2) -> failwith "unimplemented"
+  | Let (v,e1,e2) ->
+    let expr1 = eval env e1 in
+    let new_env = change_env env v expr1 in
+    eval new_env e2
   | LetRec (v,e1,e2) -> failwith "unimplemented"
-  | App(e1,e2) -> failwith "unimplemented" (*match on the function call match with Vclosure*)
-    (* let expr1 = eval env e1 in
+(*     let dummy_env = change_env env v VUnit in
+    eval dummy_env e2 *)
+  | App(e1,e2) ->
     let expr2 = eval env e2 in
-    appl env expr1 expr2 *)
-  | Fun (v,e) -> failwith "unimplemented"
-  | Pair (e1,e2) -> failwith "unimplemented"
-  | Variant (c, e1) -> failwith "unimplemented"
+    let new_env = app_env env e1 expr2 in
+    (match (eval new_env e1) with
+    | VClosure(var, expr, env) -> eval env expr
+    | _ -> VError "Not a function, cannot be applied")
+  | Fun(v,e) -> VClosure(v, e, env)
+  | Pair (e1,e2) ->
+    let expr1 = eval env e1 in
+    let expr2 = eval env e2 in
+    VPair(expr1, expr2)
+  | Variant (c, e1) ->
+    let expr1 = eval env e1 in
+    VVariant(c, expr1)
   | Match (e1, p) -> failwith "unimplemented"
   | _ -> failwith "unimplemented"
 

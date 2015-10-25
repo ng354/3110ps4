@@ -74,6 +74,51 @@ TEST_UNIT = eval [] (If(BinOp (Gt, Int 3, Int 2), Int 4, Int 6)) === VInt 4
 let var_env = ("x", ref (VInt 5))::[]
 TEST_UNIT = eval var_env (Var "x") === VInt 5
 
+(* Test App, assuming Fun is correct (see below) *)
+TEST_UNIT = eval [] (App (Fun ("x", BinOp (Plus, Var "x", Int 1)), BinOp (Plus, Int 5, Int 7))) === VInt 13
+
+TEST_UNIT = eval [] (
+ App (Fun ("x", BinOp (Plus, Var "x", Int 1)),
+  App (Fun ("y", BinOp (Plus, Var "y", Int 10)), Int 5))) === VInt 16
+
+TEST_UNIT = eval [] (
+App
+ (App (Fun ("x", BinOp (Plus, Var "x", Int 1)),
+     Fun ("y", BinOp (Plus, Var "y", Int 10))),
+   Int 5)) === VError "Not a function, cannot be applied"
+
+
+(* Test Fun *)
+TEST_UNIT = eval [] (Fun ("x", BinOp (Plus, Var "x", Int 1)) ) ===
+  VClosure("x", BinOp (Plus, Var "x", Int 1), [])
+
+TEST_UNIT = eval [("x", ref(VInt 5))]  (Fun ("x", BinOp (Plus, Var "x", Int 1)) ) ===
+  VClosure("x",  BinOp (Plus, Var "x", Int 1), [("x", {contents = VInt 5})] )
+
+(* Test Pair *)
+TEST_UNIT = eval [] (Pair (Int 3, Int 6)) === VPair(VInt 3, VInt 6)
+TEST_UNIT = eval [] (Pair (BinOp (Plus, Int 3, Int 7), BinOp (Plus, Int 3, Int 6)) )
+  === VPair (VInt 10, VInt 9)
+TEST_UNIT = eval [] (Pair (App (Fun ("x", BinOp (Plus, Var "x", Int 1)), BinOp (Plus, Int 3, Int 7)),
+  BinOp (Plus, Int 3, Int 6))  ) === VPair(VInt 11, VInt 9)
+TEST_UNIT = eval [] (Pair (App (Fun ("x", BinOp (Plus, Var "x", Int 1)), BinOp (Plus, Int 3, Int 7)),
+  BinOp (LtEq, Int 3, Int 6))   ) === VPair(VInt 11, VBool true)
+
+(* Test Variant *)
+TEST_UNIT = eval []  (Variant ("VInt", Int 3)) === VVariant("VInt", VInt 3)
+TEST_UNIT = eval [] ( Variant ("VBool", BinOp (Lt, Int 3, Int 6)) ) === VVariant("VBool", VBool true)
+
+(* Test Let *)
+TEST_UNIT = eval [] (Let ("x", Int 5, BinOp (Plus, Var "x", Int 4))) === VInt 9
+TEST_UNIT = eval [] (Let ("x", Bool true, If (Var "x", Int 3, Int 5))) === VInt 3
+TEST_UNIT = eval [] (Let ("x", BinOp (Times, BinOp (Minus, Int 10, Int 5), Int 4),                            Let ("y", BinOp (Plus, Var "x", Int 50),
+    If (BinOp (Lt, Var "y", Int 100), Bool true, Bool false)))) === VBool true
+(* Tests principle of name irrelevance *)
+TEST_UNIT = eval [] (Let ("x", BinOp (Times, BinOp (Minus, Int 10, Int 5), Int 4),                            Let ("x", BinOp (Plus, Var "x", Int 50),
+    If (BinOp (Ast.Eq, Var "x", Int 70), Bool true, Bool false)))) === VBool true
+
+
+
 
 
 let () = Pa_ounit_lib.Runtime.summarize()
