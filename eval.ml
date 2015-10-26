@@ -132,8 +132,13 @@ let app_env env e1 e2 =
     change_env env x e2
   | _ -> env
 
-
-let rec match_patterns (v) (plist) : ((environment*expr) option) =
+(* [match_patterns v plist] finds the matching pattern of
+* - expression [v] with
+* - pattern list [plist]
+* - returns an option of the  pattern's evaluation expression
+*   and its environment *)
+let rec match_patterns (v:expr) (plist:(pattern*expr) list)
+                        : ((environment*expr) option) =
   match plist with
   | [] -> None
   | (p, e)::t ->
