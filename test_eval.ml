@@ -117,8 +117,23 @@ TEST_UNIT = eval [] (Let ("x", BinOp (Times, BinOp (Minus, Int 10, Int 5), Int 4
 TEST_UNIT = eval [] (Let ("x", BinOp (Times, BinOp (Minus, Int 10, Int 5), Int 4),                            Let ("x", BinOp (Plus, Var "x", Int 50),
     If (BinOp (Ast.Eq, Var "x", Int 70), Bool true, Bool false)))) === VBool true
 
+(* Test Match *)
+let map  = Parse.parse_expr "let rec map = fun f -> fun l -> match l with
+                                | Nil ()       -> Nil ()
+                                | Cons (hd,tl) -> Cons (f hd, map f tl)
+                              in map"
+let map' = LetRec ("map", Fun ("f", Fun ("l",
+                            Match (Var "l", [
+                              PVariant ("Nil",  PUnit),
+                                Variant ("Nil", Unit);
+                              PVariant ("Cons", PPair(PVar "hd", PVar "tl")),
+                                Variant ("Cons", Pair (App (Var "f", Var "hd")
+                                                      ,App (App (Var "map", Var "f"), Var "tl")
+                                                      ));
+                            ]))),
+                   Var "map")
 
-
+TEST_UNIT = map === map'
 
 
 let () = Pa_ounit_lib.Runtime.summarize()

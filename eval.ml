@@ -27,7 +27,35 @@ and environment = (var * value ref) list
   *)
 
 let rec find_match (p : pattern) (v : value) : environment option =
-  failwith "unimplemented"
+  match p,v with
+  | PUnit, VUnit -> Some []
+  | PInt n1, VInt n2 ->
+    if n1 = n2 then Some [] else None
+  | PBool b1, VBool b2 ->
+    if b1=b2 then Some [] else None
+  | PString s1, VString s2 ->
+    if s1=s2 then Some [] else None
+  | PVar v1, _ ->
+    Some [(v1, ref v)]
+  | PVariant(c1,p1), VVariant(c2,e2) ->
+    if c1=c2 then
+       find_match p1 e2
+    else
+      None
+  | PPair(p1,p2), VPair(e1,e2) ->
+    let env1 =
+      (match find_match p1 e1 with
+      | Some p -> p
+      | None -> [])
+    in
+    let env2 =
+      (match find_match p2 e2 with
+      | Some p -> p
+      | None -> [])
+    in
+    Some (env1@env2)
+  | _ -> None
+
 
 (** apply the given operator to the given arguments *)
 let rec eval_operator (op : operator) (v1 : value) (v2 : value) : value =
@@ -95,8 +123,11 @@ let rec if_then e1 e2 e3 =
 * - [v] the string variable name
 * - [e1] the expression that will be bound to v *)
 let change_env env v e1 =
-  let removed_from_env = List.remove_assoc v env in
-  (v,ref e1)::removed_from_env
+  try
+    let () = (List.assoc v env):= e1 in
+    env
+  with
+    Not_found -> (v,ref e1)::env
 
 (* [app_env env e1 e2] will return new environment for the function e1
 * with the new binding from e2 so that we can make the appropriate closure *)
@@ -106,6 +137,14 @@ let app_env env e1 e2 =
     change_env env x e2
   | _ -> env
 
+
+let rec match_patterns (v) (plist) : ((environment*expr) option) =
+  match plist with
+  | [] -> None
+  | (p, e)::t ->
+    (match find_match p v with
+        | Some env -> Some (env,e)
+        | None -> match_patterns v t)
 
 let rec eval env e =
   match e with
@@ -121,19 +160,26 @@ let rec eval env e =
     let expr2 = eval env e2 in
     let expr3 = eval env e3 in
     if_then expr1 expr2 expr3
-  | Var x -> !(List.assoc x env)
+  | Var x ->
+    (try
+      !(List.assoc x env)
+    with
+      Not_found -> VError (x^"not found"))
   | Let (v,e1,e2) ->
     let expr1 = eval env e1 in
     let new_env = change_env env v expr1 in
     eval new_env e2
   | LetRec (v,e1,e2) -> failwith "unimplemented"
-(*     let dummy_env = change_env env v VUnit in
-    eval dummy_env e2 *)
+(*     let v_ref = ref (VError "dummy") in
+    let new_env = (v,v_ref)::env in
+    let evaluated = eval new_env e1 in
+    v_ref:= evaluated;
+    eval new_env e2 *)
   | App(e1,e2) ->
     let expr2 = eval env e2 in
-    let new_env = app_env env e1 expr2 in
-    (match (eval new_env e1) with
-    | VClosure(var, expr, env) -> eval env expr
+    (* let new_env = app_env env e1 expr2 in *)
+    (match (eval env e1) with
+    | VClosure(var, expr, env) -> eval (change_env env var expr2) expr
     | _ -> VError "Not a function, cannot be applied")
   | Fun(v,e) -> VClosure(v, e, env)
   | Pair (e1,e2) ->
@@ -143,6 +189,9 @@ let rec eval env e =
   | Variant (c, e1) ->
     let expr1 = eval env e1 in
     VVariant(c, expr1)
-  | Match (e1, p) -> failwith "unimplemented"
+  | Match (e1, p) ->
+    let expr1 = eval env e1 in
+    (match match_patterns expr1 p with
+        | Some (sub_env,expr) ->  eval sub_env expr
+        | None -> VError "No pattern matched")
   | _ -> failwith "unimplemented"
-
