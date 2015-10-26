@@ -129,37 +129,11 @@ TEST_UNIT = eval [] (LetRec ("fact",                                            
      BinOp (Times, Var "n", App (Var "fact", BinOp (Minus, Var "n", Int 1))))),
    App (Var "fact", Int 4))) === VInt 24
 
-let fold  = Parse.parse_expr "let rec fold = fun f -> fun l -> fun a -> match l with
-                                 | Nil () -> a
-                                 | Cons (hd,tl) -> f hd (fold f tl a)
-                               in fold"
-let fold' = LetRec ("fold", Fun ("f", Fun ("l", Fun ("a", Match (Var "l", [
-              PVariant ("Nil", PUnit),
-                Var "a";
-              PVariant ("Cons", PPair (PVar "hd", PVar "tl")),
-                App (App (Var "f", Var "hd"), App (App (App (Var "fold", Var "f"), Var "tl"), Var "a"))
-           ])))), Var "fold")
-
-TEST_UNIT = fold === fold'
 
 
 (* Test Match *)
-let map  = Parse.parse_expr "let rec map = fun f -> fun l -> match l with
-                                | Nil ()       -> Nil ()
-                                | Cons (hd,tl) -> Cons (f hd, map f tl)
-                              in map"
-let map' = LetRec ("map", Fun ("f", Fun ("l",
-                            Match (Var "l", [
-                              PVariant ("Nil",  PUnit),
-                                Variant ("Nil", Unit);
-                              PVariant ("Cons", PPair(PVar "hd", PVar "tl")),
-                                Variant ("Cons", Pair (App (Var "f", Var "hd")
-                                                      ,App (App (Var "map", Var "f"), Var "tl")
-                                                      ));
-                            ]))),
-                   Var "map")
-
-TEST_UNIT = map === map'
-
+TEST_UNIT = eval [("x",ref (VInt 1))] (Match (Int 1,
+                [(PInt 1, BinOp (Plus, Var "x", Int 4)); (PBool true, Int 0);
+                  (PBool false, Int 100)])) === VInt 5
 
 let () = Pa_ounit_lib.Runtime.summarize()

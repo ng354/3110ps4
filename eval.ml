@@ -137,13 +137,14 @@ let app_env env e1 e2 =
 * - pattern list [plist]
 * - returns an option of the  pattern's evaluation expression
 *   and its environment *)
-let rec match_patterns (v:expr) (plist:(pattern*expr) list)
+let rec match_patterns (v:value) (plist:(pattern*expr) list)
                         : ((environment*expr) option) =
   match plist with
   | [] -> None
   | (p, e)::t ->
     (match find_match p v with
-      | Some env -> Some (env,e)
+      | Some env ->
+        Some (env,e)
       | None -> match_patterns v t)
 
 let rec eval env e =
@@ -192,6 +193,6 @@ let rec eval env e =
   | Match (e1, p) ->
     let expr1 = eval env e1 in
     (match match_patterns expr1 p with
-        | Some (sub_env,expr) ->  eval sub_env expr
+        | Some (sub_env,expr) ->  eval (sub_env@env) expr
         | None -> VError "No pattern matched")
-  | _ -> failwith "unimplemented"
+  | _ -> VError "Not a valid expression"
