@@ -111,11 +111,6 @@ let rec bin_operation op e1 e2 =
   | (Concat, VString s1, VString s2) -> VString(s1^s2)
   | _-> VError "Not a valid value"
 
-let rec if_then e1 e2 e3 =
-  match e1 with
-  | VBool true -> e2
-  | VBool false -> e3
-  | _ -> VError "Not a valid value"
 
 (* [change_env env v e1] Returns new env without binding x, if x not in list,
 * returns dup. Then adds the new binding (x,e2) to the environment for e1
@@ -143,8 +138,8 @@ let rec match_patterns (v) (plist) : ((environment*expr) option) =
   | [] -> None
   | (p, e)::t ->
     (match find_match p v with
-        | Some env -> Some (env,e)
-        | None -> match_patterns v t)
+      | Some env -> Some (env,e)
+      | None -> match_patterns v t)
 
 let rec eval env e =
   match e with
@@ -157,9 +152,10 @@ let rec eval env e =
     bin_operation op expr1 expr2
   | If (e1,e2,e3) ->
     let expr1 = eval env e1 in
-    let expr2 = eval env e2 in
-    let expr3 = eval env e3 in
-    if_then expr1 expr2 expr3
+    (match expr1 with
+      | VBool true -> eval env e2
+      | VBool false -> eval env e3
+      | _ -> VError "Not a boolean value")
   | Var x ->
     (try
       !(List.assoc x env)
@@ -169,19 +165,18 @@ let rec eval env e =
     let expr1 = eval env e1 in
     let new_env = change_env env v expr1 in
     eval new_env e2
-  | LetRec (v,e1,e2) -> failwith "unimplemented"
-(*     let v_ref = ref (VError "dummy") in
+  | LetRec (v,e1,e2) ->
+    let v_ref = ref (VError "dummy") in
     let new_env = (v,v_ref)::env in
     let evaluated = eval new_env e1 in
     v_ref:= evaluated;
-    eval new_env e2 *)
+    eval new_env e2
   | App(e1,e2) ->
     let expr2 = eval env e2 in
-    (* let new_env = app_env env e1 expr2 in *)
     (match (eval env e1) with
     | VClosure(var, expr, env) -> eval (change_env env var expr2) expr
     | _ -> VError "Not a function, cannot be applied")
-  | Fun(v,e) -> VClosure(v, e, env)
+  | Fun(v,e) ->  VClosure(v, e, env)
   | Pair (e1,e2) ->
     let expr1 = eval env e1 in
     let expr2 = eval env e2 in

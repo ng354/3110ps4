@@ -117,6 +117,32 @@ TEST_UNIT = eval [] (Let ("x", BinOp (Times, BinOp (Minus, Int 10, Int 5), Int 4
 TEST_UNIT = eval [] (Let ("x", BinOp (Times, BinOp (Minus, Int 10, Int 5), Int 4),                            Let ("x", BinOp (Plus, Var "x", Int 50),
     If (BinOp (Ast.Eq, Var "x", Int 70), Bool true, Bool false)))) === VBool true
 
+
+(* Test LetRec on factorial function *)
+TEST_UNIT = eval [] (LetRec ("fact",                                                               Fun ("n",
+    If (BinOp (Ast.Eq, Var "n", Int 1), Int 1,
+     BinOp (Times, Var "n", App (Var "fact", BinOp (Minus, Var "n", Int 1))))),
+   App (Var "fact", Int 1))) === VInt 1
+
+TEST_UNIT = eval [] (LetRec ("fact",                                                               Fun ("n",
+    If (BinOp (Ast.Eq, Var "n", Int 1), Int 1,
+     BinOp (Times, Var "n", App (Var "fact", BinOp (Minus, Var "n", Int 1))))),
+   App (Var "fact", Int 4))) === VInt 24
+
+let fold  = Parse.parse_expr "let rec fold = fun f -> fun l -> fun a -> match l with
+                                 | Nil () -> a
+                                 | Cons (hd,tl) -> f hd (fold f tl a)
+                               in fold"
+let fold' = LetRec ("fold", Fun ("f", Fun ("l", Fun ("a", Match (Var "l", [
+              PVariant ("Nil", PUnit),
+                Var "a";
+              PVariant ("Cons", PPair (PVar "hd", PVar "tl")),
+                App (App (Var "f", Var "hd"), App (App (App (Var "fold", Var "f"), Var "tl"), Var "a"))
+           ])))), Var "fold")
+
+TEST_UNIT = fold === fold'
+
+
 (* Test Match *)
 let map  = Parse.parse_expr "let rec map = fun f -> fun l -> match l with
                                 | Nil ()       -> Nil ()
