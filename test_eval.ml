@@ -136,4 +136,11 @@ TEST_UNIT = eval [("x",ref (VInt 1))] (Match (Int 1,
                 [(PInt 1, BinOp (Plus, Var "x", Int 4)); (PBool true, Int 0);
                   (PBool false, Int 100)])) === VInt 5
 
+
+(*below should be able to match VBool with true/false and should be able to
+return different types such as an int or either a string *)
+(* let a = parse_expr "let x =(10<= 40) in match x with |true -> (10<=40) |false -> "not valid"";;
+Error: This function has type bytes -> expr
+It is applied to too many arguments; maybe you forgot a `;'.   *)
+
 let () = Pa_ounit_lib.Runtime.summarize()

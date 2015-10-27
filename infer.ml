@@ -33,7 +33,7 @@ let rec subst_typ ((x,t'):substitution) (t:typ) =
 let subst_eqn (s : substitution) (eqns : equation list) : equation list =
   List.map (fun (Eq (t1,t2)) -> Eq(subst_typ s t1, subst_typ s t2)) eqns
 
-(** apply a type substitution to an annotated expression 
+(** apply a type substitution to an annotated expression
     we deliberately violate the 80-column restriction here to make the
     parallelism in the definition clearer, hence easier to read *)
 let rec subst_expr (s : substitution) (e : annotated_expr) : annotated_expr =
@@ -72,7 +72,7 @@ and subst_pat  s = function
  *)
 
 
-(** Format a list of equations for printing. *)
+(** Format a list of equations for printing. Only beneficial for testing*)
 let format_eqns (f : Format.formatter) (eqns : equation list) : unit =
   (* see the comment in Eval.format_value for guidance implementing hints *)
   failwith "unimplemented"
@@ -82,7 +82,6 @@ let print_eqns     = Printer.make_printer format_eqns
 
 (** use format_value to convert a value to a string *)
 let string_of_eqns = Printer.make_string_of format_eqns
-
 
 
 
@@ -103,7 +102,7 @@ let collect_binop (t:typ) (op:operator) (tl:typ) (tr:typ) : equation list =
   *)
 let rec collect_expr (specs:variant_spec list) vars (e : annotated_expr)
                      : equation list =
-  failwith "unimplemented"
+  failwith "unimplemented" (*IMPLEMENT THIS TO USE IN COLLECT. do all matches here*)
 
 (** return the constraints for a match cases
   * tconst refers to the type of the parameters of the specific constructors
@@ -125,6 +124,9 @@ and collect_pat specs (p:annotated_pattern) =
  * be satisfied for e to typecheck.
  *)
 let collect specs e =
+  (*create a match with everyone of the different annotated expression types
+  use collect_expr because collect isnt recursive. collect should be one line
+  which will call collect_expr *)
   failwith "unimplemented"
 
 (******************************************************************************)

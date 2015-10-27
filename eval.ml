@@ -133,7 +133,7 @@ let app_env env e1 e2 =
   | _ -> env
 
 (* [match_patterns v plist] finds the matching pattern of
-* - expression [v] with
+* - value [v] with
 * - pattern list [plist]
 * - returns an option of the  pattern's evaluation expression
 *   and its environment *)
@@ -166,7 +166,7 @@ let rec eval env e =
     (try
       !(List.assoc x env)
     with
-      Not_found -> VError (x^"not found"))
+      Not_found -> VError (x^"variable not found"))
   | Let (v,e1,e2) ->
     let expr1 = eval env e1 in
     let new_env = change_env env v expr1 in
