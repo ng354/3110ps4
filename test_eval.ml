@@ -6,7 +6,8 @@ TEST_UNIT = eval [] (Int 42) === VInt 42
 
 (* TODO: write more unit tests for [eval] *)
 
-(* Tests Bool, String *)
+(* Tests Unit, Bool, String *)
+TEST_UNIT = eval [] (Unit) === VUnit
 TEST_UNIT = eval [] (Bool true) === VBool true
 TEST_UNIT = eval [] (Bool false) === VBool false
 TEST_UNIT = eval [] (String "hello world") === VString "hello world"
@@ -129,10 +130,13 @@ TEST_UNIT = eval [] (LetRec ("fact", Fun ("n",
      BinOp (Times, Var "n", App (Var "fact", BinOp (Minus, Var "n", Int 1))))),
    App (Var "fact", Int 4))) === VInt 24
 
+(* The if-then inside of this should break because we can't really compare false and 1 *)
 TEST_UNIT = eval [] (LetRec ("fact", Fun ("n",
     If (BinOp (Ast.Eq, Var "n", Int 1), Int 1,
      BinOp (Times, Var "n", App (Var "fact", BinOp (Minus, Var "n", Int 1))))),
    App (Var "fact", Bool false))) === VError "Not a boolean value"
+
+
 
 (* Test Match *)
 

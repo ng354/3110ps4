@@ -102,7 +102,35 @@ let collect_binop (t:typ) (op:operator) (tl:typ) (tr:typ) : equation list =
   *)
 let rec collect_expr (specs:variant_spec list) vars (e : annotated_expr)
                      : equation list =
-  failwith "unimplemented" (*IMPLEMENT THIS TO USE IN COLLECT. do all matches here*)
+  match e with
+  | AVar(t,v) -> failwith "unimplemented"
+  | AApp(t,ae1,ae2) -> failwith "unimplemented"
+  | AFun(t,(v1,t1),ae2)-> failwith "unimplemented"
+  | ALet(t,(v1,t1),ae2,ae3) -> failwith "unimplemented"
+  | ALetRec(t,(v1,t2),ae2,ae3) -> failwith "unimplemented"
+  | AUnit(t) -> Eq(t,TUnit)::vars
+  | AInt(t,i) -> Eq(t,TInt)::vars
+  | ABool(t,b) -> Eq(t,TBool)::vars
+  | AString(t,s) -> Eq(t,TString)::vars
+  | AVariant(t,c,ae1) -> failwith "unimplemented"
+  | APair(t,ae1,ae2) -> failwith "unimplemented"
+  | ABinOp(t,op,ae1,ae2) -> failwith "unimplemented" (* (collect_binop t op ae1 ae2)::vars *)
+  | AIf(t,ae1,ae2,ae3) ->
+   (* * represents [(if e1:t1 then e2:t2 else e3:t3):t]  *)
+      let t1 = (match collect_expr specs [] ae1 with
+                | [] -> failwith "nothing in t1"
+                | Eq(type_t1,expected_t1)::tl -> type_t1)
+      in
+      let (t2,type_t2) = (match collect_expr specs [] ae2 with
+                | [] -> failwith "nothing in t2"
+                | Eq(type1,type2)::tl -> (type1,type2))
+      in
+      let t3 = (match collect_expr specs [] ae3 with
+                | [] -> failwith "nothing in t3"
+                | eq::tl -> eq)
+      in
+      Eq(t1,TBool)::Eq(t2,type_t2)::t3::Eq(t,t)::vars
+  | AMatch(t,ae1,ae_lst) -> failwith "unimplemented"
 
 (** return the constraints for a match cases
   * tconst refers to the type of the parameters of the specific constructors
@@ -127,7 +155,7 @@ let collect specs e =
   (*create a match with everyone of the different annotated expression types
   use collect_expr because collect isnt recursive. collect should be one line
   which will call collect_expr *)
-  failwith "unimplemented"
+  collect_expr specs [] e
 
 (******************************************************************************)
 (** constraint solver (unification)                                          **)
