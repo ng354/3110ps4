@@ -119,28 +119,47 @@ TEST_UNIT = eval [] (Let ("x", BinOp (Times, BinOp (Minus, Int 10, Int 5), Int 4
 
 
 (* Test LetRec on factorial function *)
-TEST_UNIT = eval [] (LetRec ("fact",                                                               Fun ("n",
+TEST_UNIT = eval [] (LetRec ("fact", Fun ("n",
     If (BinOp (Ast.Eq, Var "n", Int 1), Int 1,
      BinOp (Times, Var "n", App (Var "fact", BinOp (Minus, Var "n", Int 1))))),
    App (Var "fact", Int 1))) === VInt 1
 
-TEST_UNIT = eval [] (LetRec ("fact",                                                               Fun ("n",
+TEST_UNIT = eval [] (LetRec ("fact", Fun ("n",
     If (BinOp (Ast.Eq, Var "n", Int 1), Int 1,
      BinOp (Times, Var "n", App (Var "fact", BinOp (Minus, Var "n", Int 1))))),
    App (Var "fact", Int 4))) === VInt 24
 
-
+TEST_UNIT = eval [] (LetRec ("fact", Fun ("n",
+    If (BinOp (Ast.Eq, Var "n", Int 1), Int 1,
+     BinOp (Times, Var "n", App (Var "fact", BinOp (Minus, Var "n", Int 1))))),
+   App (Var "fact", Bool false))) === VError "Not a boolean value"
 
 (* Test Match *)
+
+(* Match an int on var x *)
 TEST_UNIT = eval [("x",ref (VInt 1))] (Match (Int 1,
                 [(PInt 1, BinOp (Plus, Var "x", Int 4)); (PBool true, Int 0);
                   (PBool false, Int 100)])) === VInt 5
 
+(* Matches var x which is TRUE with booleans that have expressions *)
+TEST_UNIT = eval [("s", ref (VString "not valid"))] (
+  Let ("x", BinOp (LtEq, Int 10, Int 40), Match (Var "x",
+    [(PBool true, BinOp (LtEq, Int 10, Int 40)); (PBool false, Var "s")])))
+  === VBool true
 
-(*below should be able to match VBool with true/false and should be able to
-return different types such as an int or either a string *)
-(* let a = parse_expr "let x =(10<= 40) in match x with |true -> (10<=40) |false -> "not valid"";;
-Error: This function has type bytes -> expr
-It is applied to too many arguments; maybe you forgot a `;'.   *)
+(*Matches Variant on a Variant and then Unit on Unit*)
+TEST_UNIT = eval []  (
+  Let ("c", Variant ("Cons", Unit),
+  Match (Variant ("Cons", Unit),
+    [(PVariant ("Decons", PUnit), Int 3); (PVariant ("Cons", PUnit), Int 4);
+     (PVar "_", Variant ("PBool", Bool false))]))) === VInt 4
+
+(* Tries to match Variant but then matches PVar *)
+TEST_UNIT = eval [] (
+  Let ("c", Variant ("Another", Unit),
+    Match (Variant ("Another", Unit),
+    [(PVariant ("Decons", PUnit), Int 3); (PVariant ("Cons", PUnit), Int 4);
+     (PVar "_", Bool false)]))
+) === VBool false
 
 let () = Pa_ounit_lib.Runtime.summarize()

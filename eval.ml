@@ -39,7 +39,7 @@ let rec find_match (p : pattern) (v : value) : environment option =
     Some [(v1, ref v)]
   | PVariant(c1,p1), VVariant(c2,e2) ->
     if c1=c2 then
-       find_match p1 e2
+      find_match p1 e2
     else
       None
   | PPair(p1,p2), VPair(e1,e2) ->
@@ -149,6 +149,7 @@ let rec match_patterns (v:value) (plist:(pattern*expr) list)
 
 let rec eval env e =
   match e with
+  | Unit -> VUnit
   | Int n ->  VInt(n)
   | Bool b -> VBool(b)
   | String s ->  VString(s)
@@ -195,4 +196,3 @@ let rec eval env e =
     (match match_patterns expr1 p with
         | Some (sub_env,expr) ->  eval (sub_env@env) expr
         | None -> VError "No pattern matched")
-  | _ -> VError "Not a valid expression"
