@@ -152,7 +152,20 @@ let rec collect_expr (specs:variant_spec list) vars (e : annotated_expr)
       let list2 = collect_expr specs vars ae2 in
       let list3 = collect_expr specs vars ae3 in
       (Eq(t1, TBool)::Eq(t2,t3)::[])@(list2)@(list3)
-  | AMatch(t,ae1,ae_lst) -> failwith "unimplemented"
+  | AMatch(t,ae1,ae_list) ->
+      let type_ae1 = typeof ae1 in
+      let type_list_ae1 = collect_expr specs vars ae1 in
+      let pat_list = List.map (fun (p,_) -> Eq(typeof_pat p, type_ae1)) ae_list in
+      let collect_pats_and_exprs =
+        fun (pat_list,exp_list) (p,e) ->
+          let (eq,variables) = collect_pat specs p in
+          let new_vars = if (List.length variables = 0) then vars else variables@vars in
+          let collected_exp = collect_expr specs new_vars e in
+          (eq@pat_list,collected_exp@exp_list)
+      in
+      let (collected_pat_list,expr_collect_list) = List.fold_left collect_pats_and_exprs ([],[]) ae_list in
+      let expr_list = List.map (fun (_,e) -> Eq(typeof e,t)) ae_list in
+      pat_list@collected_pat_list@expr_list@type_list_ae1@expr_collect_list
 
 (** return the constraints for a match cases
   * tconst refers to the type of the parameters of the specific constructors
@@ -162,8 +175,20 @@ and collect_case specs vs tconst tvariant ((p:annotated_pattern),(e:annotated_ex
   failwith "unimplemented"
 
 (** return the constraints and variables for a pattern *)
+(* consider variables in APVar or pair *)
 and collect_pat specs (p:annotated_pattern) =
-  failwith "unimplemented"
+  match p with
+  | APUnit(t) -> ([Eq(t,TUnit)], [])
+  | APInt(t,i) -> ([Eq(t,TInt)], [])
+  | APBool(t,b) -> ([Eq(t,TBool)], [])
+  | APString(t,s) -> ([Eq(t,TString)], [])
+  | APVar(t,v) -> ([Eq(t,TAlpha("'a"))], [(v,t)])
+  | APVariant(t,c,ap) -> failwith "unimplemented"
+  | APPair(t,ap1,ap2) ->
+      let (eq_ap1,vars_ap1) = collect_pat specs ap1 in
+      let (eq_ap2,vars_ap2) = collect_pat specs ap2 in
+      ((Eq(t,TStar(typeof_pat ap1,typeof_pat ap2))::[])@eq_ap1@eq_ap2,
+                              vars_ap1@vars_ap2)
 
 (******************************************************************************)
 (** constraint generation                                                    **)

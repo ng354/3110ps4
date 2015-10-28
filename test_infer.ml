@@ -87,4 +87,21 @@ TEST_UNIT = infer [] (If (Bool true, Int 5, Int 6)) === (AIf (TAlpha "a", ABool 
 (* TEST_UNIT = infer [] (If (Bool true, Int 5, Bool false)) ===  *)
 
 
+(* Test Match without variants *)
+TEST_UNIT = infer [] (Match (Int 5, [(PInt 4, Int 4); (PInt 3, Int 3); (PInt 5, Int 7)])) ===
+  AMatch (TInt, AInt (TInt, 5),
+    [(APInt (TInt, 4), AInt (TInt, 4)); (APInt (TInt, 3), AInt (TInt, 3));
+      (APInt (TInt, 5), AInt (TInt, 7))])
+
+TEST_UNIT = infer [] (Match (Int 3, [(PVar "x", BinOp (Plus, Int 5, Var "x")); (PInt 2, Int 3)])) ===
+    AMatch (TInt, AInt (TInt, 3),
+      [(APVar (TInt, "x"), ABinOp (TInt, Plus, AInt (TInt, 5), AVar (TInt, "x")));
+      (APInt (TInt, 2), AInt (TInt, 3))])
+
+TEST_UNIT = infer [] (Match (BinOp (Lt, Int 4, Int 6), [(PBool true, String "yay"); (PBool false, String "boo")])) ===
+            AMatch (TString, ABinOp (TBool, Lt, AInt (TInt, 4), AInt (TInt, 6)),
+             [(APBool (TBool, true), AString (TString, "yay"));
+              (APBool (TBool, false), AString (TString, "boo"))])
+
+
 let () = Pa_ounit_lib.Runtime.summarize()
