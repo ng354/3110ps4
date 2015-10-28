@@ -93,7 +93,12 @@ let newvar () : typ =
 
 (* return the constraints for a binary operator *)
 let collect_binop (t:typ) (op:operator) (tl:typ) (tr:typ) : equation list =
-  failwith "unimplemented"
+  match op with
+  | Plus -> Eq(t,TInt)::Eq(tl,TInt)::Eq(tr,TInt)::[]
+  | Minus -> Eq(t,TInt)::Eq(tl,TInt)::Eq(tr,TInt)::[]
+  | Times -> Eq(t,TInt)::Eq(tl,TInt)::Eq(tr,TInt)::[]
+  | Concat -> Eq(t,TString)::Eq(tl,TString)::Eq(tr,TString)::[]
+  | _ -> Eq(t,TBool)::Eq(tl,tr)::[]
 
 (** return the constraints for an expr
   * vars refers to a data structure that stores the types of each of the variables
@@ -108,41 +113,27 @@ let rec collect_expr (specs:variant_spec list) vars (e : annotated_expr)
   | AFun(t,(v1,t1),ae2)-> failwith "unimplemented"
   | ALet(t,(v1,t1),ae2,ae3) -> failwith "unimplemented"
   | ALetRec(t,(v1,t2),ae2,ae3) -> failwith "unimplemented"
-  | AUnit(t) -> Eq(t,TUnit)::vars
-  | AInt(t,i) -> Eq(t,TInt)::vars
-  | ABool(t,b) -> Eq(t,TBool)::vars
-  | AString(t,s) -> Eq(t,TString)::vars
+  | AUnit(t) -> Eq(t,TUnit)::[]
+  | AInt(t,i) -> Eq(t,TInt)::[]
+  | ABool(t,b) -> Eq(t,TBool)::[]
+  | AString(t,s) -> Eq(t,TString)::[]
   | AVariant(t,c,ae1) -> failwith "unimplemented"
-  | APair(t,ae1,ae2) -> failwith "unimplemented"
-  | ABinOp(t,op,ae1,ae2) -> failwith "unimplemented" (* (collect_binop t op ae1 ae2)::vars *)
+  | APair(t,ae1,ae2) ->
+    let t1 = collect_expr specs [] ae1 in
+    let t2 = collect_expr specs [] ae2 in
+    (Eq(t, TStar(typeof ae1, typeof ae2))::[])@t1@t2
+  | ABinOp(t,op,ae1,ae2) ->
+    let binops = collect_binop t op (typeof ae1) (typeof ae2) in
+    let t1 = collect_expr specs vars ae1 in
+    let t2 = collect_expr specs vars ae2 in
+    binops@t1@t2
   | AIf(t,ae1,ae2,ae3) ->
-   (* * represents [(if e1:t1 then e2:t2 else e3:t3):t]  *)
-      let t1 = typeof ae1 in (*collect the type of the expression, t1 has to be BOOL. ensure that eq of t1 is Tbool*)
+      let t1 = typeof ae1 in
       let t2 = typeof ae2 in
-      let t3 = typeof a3 in
-
-
-      (*do for ae2 and ae2 and then cons those all together with the eq lists for 1 2 and 3 all together. unify will check that the types match up. *)
-      (* (match collect_expr specs [] ae1 with
-                | [] -> failwith "nothing in t1"
-                | hd::tl -> Eq(t1, TBool)::Eq(type_t1,expected_t1)::tl  *)(* -> type_t1) *) (*doesnt mean that thats the type for the expression. its all in a list and can be out of order. *)
-      in
-
-      (* e1 produces a bunch of equations as well. ensure type t1 is TBool. Collect all equations. Cons
-        Eq(t1,Tbool) with the Eq list from ae1. Do the same with ae2 and ae3. Then cons all of those together.
-      return all of the list of equations with the entire equation as well. *)
-
-
-
-      let (t2,type_t2) = (match collect_expr specs [] ae2 with
-                | [] -> failwith "nothing in t2"
-                | Eq(type1,type2)::tl -> (type1,type2))
-      in
-      let t3 = (match collect_expr specs [] ae3 with
-                | [] -> failwith "nothing in t3"
-                | eq::tl -> eq)
-      in
-      Eq(t1,TBool)::Eq(t2,type_t2)::t3::Eq(t,t)::vars
+      let t3 = typeof ae3 in
+      let list2 = collect_expr specs [] ae2 in
+      let list3 = collect_expr specs [] ae3 in
+      (Eq(t1, TBool)::Eq(t2,t3)::[])@(list2)@(list3)
   | AMatch(t,ae1,ae_lst) -> failwith "unimplemented"
 
 (** return the constraints for a match cases
