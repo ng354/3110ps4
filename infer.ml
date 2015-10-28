@@ -198,6 +198,20 @@ let rec collect_expr (specs:variant_spec list) vars (e : annotated_expr)
 and collect_case specs vs tconst tvariant ((p:annotated_pattern),(e:annotated_expr)) =
   failwith "unimplemented"
 
+and collect_var_pattern specs t c ap =
+  match specs with
+  | [] -> failwith "Variant for constructor pattern type does not exist"
+  | v_spec::tl ->
+    let spec_constructors = v_spec.constructors in
+    if List.mem_assoc c spec_constructors then
+      let ap_type = List.assoc c spec_constructors in
+      let (ap_eq_list, ap_var_list) = collect_pat specs ap in
+      let typ_list = List.map (fun elt ->  newvar ()) v_spec.vars in
+      let v_type = TVariant(typ_list,v_spec.name) in
+      ((Eq(t,v_type)::Eq(typeof_pat ap, ap_type)::[])@ap_eq_list, [])
+    else
+      collect_var_pattern tl t c ap
+
 (** return the constraints and variables for a pattern *)
 (* consider variables in APVar or pair *)
 and collect_pat specs (p:annotated_pattern) =
@@ -207,7 +221,7 @@ and collect_pat specs (p:annotated_pattern) =
   | APBool(t,b) -> ([Eq(t,TBool)], [])
   | APString(t,s) -> ([Eq(t,TString)], [])
   | APVar(t,v) -> ([Eq(t,TAlpha("'a"))], [(v,t)])
-  | APVariant(t,c,ap) -> failwith "unimplemented"
+  | APVariant(t,c,ap) -> collect_var_pattern specs t c ap
   | APPair(t,ap1,ap2) ->
       let (eq_ap1,vars_ap1) = collect_pat specs ap1 in
       let (eq_ap2,vars_ap2) = collect_pat specs ap2 in

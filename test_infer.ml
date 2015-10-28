@@ -29,11 +29,11 @@ TEST_UNIT = infer [] (Let ("x", Int 5, BinOp (Plus, Var "x", Int 7))) ===
                         ABinOp (TInt, Plus, AVar (TInt, "x"), AInt (TInt, 7)))
 
 (* Test LetRec *)
-TEST_UNIT = infer [] (LetRec ("fact",                                                                                      Fun ("n",
+TEST_UNIT = infer [] (LetRec ("fact", Fun ("n",
     If (BinOp (Ast.Eq, Var "n", Int 1), Int 1,
      BinOp (Times, Var "n", App (Var "fact", BinOp (Minus, Var "n", Int 1))))),
    App (Var "fact", Int 4))) ===
-     (ALetRec (TInt, ("fact", TArrow (TInt, TInt)),                                                        AFun (TArrow (TInt, TInt), ("n", TInt),
+     (ALetRec (TInt, ("fact", TArrow (TInt, TInt)),  AFun (TArrow (TInt, TInt), ("n", TInt),
     AIf (TInt, ABinOp (TBool, Ast.Eq, AVar (TAlpha "t13", "n"), AInt (TAlpha "t12", 1)),
      AInt (TInt, 1),
      ABinOp (TInt, Times, AVar (TInt, "n"),
@@ -128,5 +128,21 @@ TEST_UNIT = typeof (infer [option_spec] (Parse.parse_expr "let x = Some () in So
 
 
 let option_spec = Parse.parse_variant_spec "type 'a option = Some of 'a | None of unit"
+TEST_UNIT = infer [option_spec] (Parse.parse_expr "match Some 4 with | Some 4 -> true | Some 5 -> false") ===
+   AMatch (TBool, AVariant (TVariant ([TInt], "option"), "Some", AInt (TInt, 4)),
+    [(APVariant (TVariant ([TInt], "option"), "Some", APInt (TInt, 4)),
+   ABool (TBool, true));
+  (APVariant (TVariant ([TInt], "option"), "Some", APInt (TInt, 5)),
+   ABool (TBool, false))])
+
+TEST_UNIT = infer [option_spec] (Parse.parse_expr "match Some (4+5) with | Some 10 -> false | Some 9 -> true") ===
+AMatch (TBool,AVariant (TVariant ([TInt], "option"), "Some",
+  ABinOp (TInt, Plus, AInt (TInt, 4), AInt (TInt, 5))),
+ [(APVariant (TVariant ([TInt], "option"), "Some", APInt (TInt, 10)),
+   ABool (TBool, false));
+  (APVariant (TVariant ([TInt], "option"), "Some", APInt (TInt, 9)),
+   ABool (TBool, true))])
+
+
 
 let () = Pa_ounit_lib.Runtime.summarize()
