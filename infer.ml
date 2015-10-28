@@ -108,19 +108,37 @@ let collect_binop (t:typ) (op:operator) (tl:typ) (tr:typ) : equation list =
 let rec collect_expr (specs:variant_spec list) vars (e : annotated_expr)
                      : equation list =
   match e with
-  | AVar(t,v) -> failwith "unimplemented"
-  | AApp(t,ae1,ae2) -> failwith "unimplemented"
-  | AFun(t,(v1,t1),ae2)-> failwith "unimplemented"
-  | ALet(t,(v1,t1),ae2,ae3) -> failwith "unimplemented"
-  | ALetRec(t,(v1,t2),ae2,ae3) -> failwith "unimplemented"
+  | AVar(t,v) ->
+      (try
+        let v_type = List.assoc v vars in
+        Eq(t,v_type)::[]
+      with
+      | Not_found -> failwith ("Unbound var "^v))
+  | AApp(t,ae1,ae2) ->
+      let t1 = collect_expr specs vars ae1 in
+      let t2 = collect_expr specs vars ae2 in
+      let type_ae1 = typeof ae1 in
+      let type_ae2 = typeof ae2 in
+      (Eq(type_ae1,TArrow(type_ae2,t))::[])@t1@t2
+  | AFun(t,(v1,t1),ae2)->
+      let type_ae2 = collect_expr specs ((v1,t1)::vars) ae2 in
+      (Eq(t,TArrow(t1,typeof ae2))::Eq(t1,TAlpha("'a"))::[])@type_ae2
+  | ALet(t,(v1,t1),ae2,ae3) ->
+      let type_ae3 = collect_expr specs ((v1,t1)::vars) ae3 in
+      (Eq(t,typeof ae3)::Eq(t1,typeof ae2)::[])@type_ae3
+  | ALetRec(t,(v1,t1),ae2,ae3) ->
+      let type_ae2 = collect_expr specs ((v1,t1)::vars) ae2 in
+      let type_ae3 = collect_expr specs ((v1,t1)::vars) ae3 in
+      let type_a3 = typeof ae3 in
+      (Eq(t,type_a3)::Eq(t1,typeof ae2)::[])@type_ae2@type_ae3
   | AUnit(t) -> Eq(t,TUnit)::[]
   | AInt(t,i) -> Eq(t,TInt)::[]
   | ABool(t,b) -> Eq(t,TBool)::[]
   | AString(t,s) -> Eq(t,TString)::[]
   | AVariant(t,c,ae1) -> failwith "unimplemented"
   | APair(t,ae1,ae2) ->
-    let t1 = collect_expr specs [] ae1 in
-    let t2 = collect_expr specs [] ae2 in
+    let t1 = collect_expr specs vars ae1 in
+    let t2 = collect_expr specs vars ae2 in
     (Eq(t, TStar(typeof ae1, typeof ae2))::[])@t1@t2
   | ABinOp(t,op,ae1,ae2) ->
     let binops = collect_binop t op (typeof ae1) (typeof ae2) in
@@ -131,8 +149,8 @@ let rec collect_expr (specs:variant_spec list) vars (e : annotated_expr)
       let t1 = typeof ae1 in
       let t2 = typeof ae2 in
       let t3 = typeof ae3 in
-      let list2 = collect_expr specs [] ae2 in
-      let list3 = collect_expr specs [] ae3 in
+      let list2 = collect_expr specs vars ae2 in
+      let list3 = collect_expr specs vars ae3 in
       (Eq(t1, TBool)::Eq(t2,t3)::[])@(list2)@(list3)
   | AMatch(t,ae1,ae_lst) -> failwith "unimplemented"
 

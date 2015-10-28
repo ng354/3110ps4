@@ -9,6 +9,39 @@ TEST_UNIT = infer [] (Int 7) === AInt (TInt, 7)
 TEST_UNIT = infer [] (Bool false) === ABool (TBool, false)
 TEST_UNIT = infer [] (String "hello") === AString (TString, "hello")
 
+(* Test App which also checks Fun and Var *)
+TEST_UNIT = infer [] (App (Fun ("x", BinOp (Plus, Var "x", Int 1)), Int 1)) ===
+                      AApp (TInt, AFun (TArrow (TInt, TInt), ("x", TInt),
+                        ABinOp (TInt, Plus, AVar (TInt, "x"), AInt (TInt, 1))),
+                       AInt (TInt, 1))
+
+
+(* Test function , which also checks Var*)
+TEST_UNIT = infer [] (Fun ("x", BinOp (Plus, Var "x", Int 1))) ===
+  AFun (TArrow (TInt, TInt), ("x", TInt),
+    ABinOp (TInt, Plus, AVar (TInt, "x"), AInt (TInt, 1)))
+
+TEST_UNIT = infer [] (Fun ("x", Var "x")) === AFun (TArrow (TAlpha "a", TAlpha "a"), ("x", TAlpha "a"), AVar (TAlpha "a", "x"))
+
+(* Test Let *)
+TEST_UNIT = infer [] (Let ("x", Int 5, BinOp (Plus, Var "x", Int 7))) ===
+                      ALet (TInt, ("x", TInt), AInt (TInt, 5),
+                        ABinOp (TInt, Plus, AVar (TInt, "x"), AInt (TInt, 7)))
+
+(* Test LetRec *)
+TEST_UNIT = infer [] (LetRec ("fact",                                                                                      Fun ("n",
+    If (BinOp (Ast.Eq, Var "n", Int 1), Int 1,
+     BinOp (Times, Var "n", App (Var "fact", BinOp (Minus, Var "n", Int 1))))),
+   App (Var "fact", Int 4))) ===
+     (ALetRec (TInt, ("fact", TArrow (TInt, TInt)),                                                        AFun (TArrow (TInt, TInt), ("n", TInt),
+    AIf (TInt, ABinOp (TBool, Ast.Eq, AVar (TAlpha "t13", "n"), AInt (TAlpha "t12", 1)),
+     AInt (TInt, 1),
+     ABinOp (TInt, Times, AVar (TInt, "n"),
+      AApp (TInt, AVar (TArrow (TInt, TInt), "fact"),
+       ABinOp (TInt, Minus, AVar (TInt, "n"), AInt (TInt, 1)))))),
+   AApp (TInt, AVar (TArrow (TInt, TInt), "fact"), AInt (TInt, 4))))
+
+
 (* Test pairs *)
 TEST_UNIT = infer [] (Pair (Int 4, Int 5)) === (APair (TStar (TInt, TInt), AInt (TInt, 4), AInt (TInt, 5)))
 TEST_UNIT = infer [] (Pair (Int 4, Bool false)) === (APair (TStar (TInt, TBool), AInt (TInt, 4), ABool (TBool, false)))
