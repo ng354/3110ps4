@@ -89,6 +89,22 @@ let string_of_eqns = Printer.make_string_of format_eqns
 let newvar () : typ =
   failwith "unimplemented"
 
+(*returns the constraints for variants*)
+let rec collect_variant (specs:variant_spec list) (t:typ) (c:constructor) (e:typ) =
+  match specs with
+  | [] -> failwith "variant type does not exist, raise exception"
+  | v_spec::tl ->
+    let spec_constructors = v_spec.constructors in
+    try
+     (
+      let e_type = List.assoc c spec_constructors in
+      let cons_types = List.split spec_constructors in
+      let types = (snd cons_types) in
+      let v_type = TVariant(types ,v_spec.name) in
+      Eq(t,v_type)::Eq(e, e_type)::[]
+    )
+    with
+    | Not_found -> collect_variant tl t c e
 
 
 (* return the constraints for a binary operator *)
@@ -135,7 +151,9 @@ let rec collect_expr (specs:variant_spec list) vars (e : annotated_expr)
   | AInt(t,i) -> Eq(t,TInt)::[]
   | ABool(t,b) -> Eq(t,TBool)::[]
   | AString(t,s) -> Eq(t,TString)::[]
-  | AVariant(t,c,ae1) -> failwith "unimplemented"
+  | AVariant(t,c,ae1) ->
+    let e_type_list = collect_expr specs vars ae1 in
+    (collect_variant specs t c (typeof ae1))@e_type_list
   | APair(t,ae1,ae2) ->
     let t1 = collect_expr specs vars ae1 in
     let t2 = collect_expr specs vars ae2 in
