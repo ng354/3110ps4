@@ -87,20 +87,26 @@ let string_of_eqns = Printer.make_string_of format_eqns
 
 (** generate an unused type variable *)
 let newvar () : typ =
-  failwith "unimplemented"
+     let rec alpha_of_int i =
+      let let_of_int i = String.make 1 (char_of_int (i - 1 + int_of_char 'a')) in
+      if i <= 0 then "" else (alpha_of_int (i/26))^(let_of_int (i mod 26))
+    in
+
+    let next_var  = ref 0 in
+    next_var := 1 + !next_var;
+    TAlpha (alpha_of_int !next_var)
 
 (*returns the constraints for variants*)
 let rec collect_variant (specs:variant_spec list) (t:typ) (c:constructor) (e:typ) =
   match specs with
-  | [] -> failwith "variant for constructor type does not exist"
+  | [] -> failwith "Variant for constructor type does not exist"
   | v_spec::tl ->
     let spec_constructors = v_spec.constructors in
     try
      (
       let e_type = List.assoc c spec_constructors in
-      let cons_types = List.split spec_constructors in
-      let types = (snd cons_types) in
-      let v_type = TVariant(types ,v_spec.name) in
+      let typ_list = List.map (fun elt -> newvar ()) v_spec.vars in
+      let v_type = TVariant(typ_list ,v_spec.name) in
       Eq(t,v_type)::Eq(e, e_type)::[]
     )
     with
@@ -138,7 +144,7 @@ let rec collect_expr (specs:variant_spec list) vars (e : annotated_expr)
       (Eq(type_ae1,TArrow(type_ae2,t))::[])@t1@t2
   | AFun(t,(v1,t1),ae2)->
       let type_ae2 = collect_expr specs ((v1,t1)::vars) ae2 in
-      (Eq(t,TArrow(t1,typeof ae2))::Eq(t1,TAlpha("'a"))::[])@type_ae2
+      (Eq(t,TArrow(t1,typeof ae2))::Eq(t1,newvar ())::[])@type_ae2
   | ALet(t,(v1,t1),ae2,ae3) ->
       let type_ae3 = collect_expr specs ((v1,t1)::vars) ae3 in
       (Eq(t,typeof ae3)::Eq(t1,typeof ae2)::[])@type_ae3

@@ -114,10 +114,19 @@ let spec2 = Parse.parse_variant_spec ("type color =
             | Green of string
             | Blue of bool
             | Black of unit")
-TEST_UNIT = infer [spec1;spec2] (Parse.parse_expr "Hello 3") === AVariant (TVariant ([TInt; TBool], "asd"), "Hello", AInt (TInt, 3))
-TEST_UNIT = infer [spec1;spec2] (Parse.parse_expr "Goodbye true") === AVariant (TVariant ([TInt; TBool], "asd"), "Goodbye", ABool (TBool, true))
-TEST_UNIT = infer [spec1;spec2] (Parse.parse_expr "Blue false") === AVariant (TVariant ([TInt; TString; TBool; TUnit], "color"), "Blue",
-                                                                    ABool (TBool, false))
+ TEST_UNIT = infer [spec1;spec2] (Parse.parse_expr "Hello 3") === AVariant (TVariant ([], "asd"), "Hello", AInt (TInt, 3))
+TEST_UNIT = infer [spec1;spec2] (Parse.parse_expr "Goodbye true") === AVariant (TVariant ([], "asd"), "Goodbye", ABool (TBool, true))
+TEST_UNIT = infer [spec1;spec2] (Parse.parse_expr "Blue false") === AVariant (TVariant ([], "color"), "Blue", ABool (TBool, false))
 
+let option_spec  = Parse.parse_variant_spec "type 'a option = Some of 'a | None of unit"
+TEST_UNIT = typeof (infer [option_spec] (Parse.parse_expr "let x = Some 1 in Some \"hello\" "))
+  === TVariant ([TString], "option")
+TEST_UNIT = typeof (infer [option_spec] (Parse.parse_expr "let x = Some 1 in Some false "))
+  === TVariant ([TBool], "option")
+TEST_UNIT = typeof (infer [option_spec] (Parse.parse_expr "let x = Some () in Some () "))
+  === TVariant ([TUnit], "option")
+
+
+let option_spec = Parse.parse_variant_spec "type 'a option = Some of 'a | None of unit"
 
 let () = Pa_ounit_lib.Runtime.summarize()
