@@ -117,10 +117,23 @@ let rec collect_expr (specs:variant_spec list) vars (e : annotated_expr)
   | ABinOp(t,op,ae1,ae2) -> failwith "unimplemented" (* (collect_binop t op ae1 ae2)::vars *)
   | AIf(t,ae1,ae2,ae3) ->
    (* * represents [(if e1:t1 then e2:t2 else e3:t3):t]  *)
-      let t1 = (match collect_expr specs [] ae1 with
+      let t1 = typeof ae1 in (*collect the type of the expression, t1 has to be BOOL. ensure that eq of t1 is Tbool*)
+      let t2 = typeof ae2 in
+      let t3 = typeof a3 in
+
+
+      (*do for ae2 and ae2 and then cons those all together with the eq lists for 1 2 and 3 all together. unify will check that the types match up. *)
+      (* (match collect_expr specs [] ae1 with
                 | [] -> failwith "nothing in t1"
-                | Eq(type_t1,expected_t1)::tl -> type_t1)
+                | hd::tl -> Eq(t1, TBool)::Eq(type_t1,expected_t1)::tl  *)(* -> type_t1) *) (*doesnt mean that thats the type for the expression. its all in a list and can be out of order. *)
       in
+
+      (* e1 produces a bunch of equations as well. ensure type t1 is TBool. Collect all equations. Cons
+        Eq(t1,Tbool) with the Eq list from ae1. Do the same with ae2 and ae3. Then cons all of those together.
+      return all of the list of equations with the entire equation as well. *)
+
+
+
       let (t2,type_t2) = (match collect_expr specs [] ae2 with
                 | [] -> failwith "nothing in t2"
                 | Eq(type1,type2)::tl -> (type1,type2))

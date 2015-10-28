@@ -40,9 +40,13 @@ TEST_UNIT = eval [] (BinOp(Times, String "hey", Int 4)) === VError "Not a valid 
 (* Test Binop <,>,<=,>=,=,<> *)
 TEST_UNIT = eval [] (BinOp (Lt, Int 4, Int 6)) === VBool true
 TEST_UNIT = eval [] (BinOp (Lt, Int 10, Int 6)) === VBool false
+TEST_UNIT = eval [] (BinOp (Lt, Bool true, Bool true)) === VBool false
+TEST_UNIT = eval [] (BinOp (Lt, Unit, Unit)) === VBool false
 
 TEST_UNIT = eval [] (BinOp (Gt, Int 10, Int 6)) === VBool true
 TEST_UNIT = eval [] (BinOp (Gt, Int 4, Int 6)) === VBool false
+TEST_UNIT = eval [] (BinOp (Gt, Bool true, Bool true)) === VBool false
+TEST_UNIT = eval [] (BinOp (Gt, Unit, Unit)) === VBool false
 
 TEST_UNIT = eval [] (BinOp (Eq, Int 4, Int 6)) === VBool false
 TEST_UNIT = eval [] (BinOp (Eq, Int 6, Int 6)) === VBool true
