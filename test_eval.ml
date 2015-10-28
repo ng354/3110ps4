@@ -248,6 +248,16 @@ TEST_UNIT = eval [] (LetRec ("fact", Fun ("n",
      BinOp (Times, Var "n", App (Var "fact", BinOp (Minus, Var "n", Int 1))))),
    App (Var "fact", Bool false))) === VError "Not a boolean value"
 
+(* Test LetRec on a non-recursive function *)
+TEST_UNIT = eval [] (LetRec ("x", BinOp (Times,
+                                      BinOp (Minus, Int 10, Int 5),
+                                      Int 4),
+                          Let ("x", BinOp (Plus, Var "x", Int 50),
+                            If (BinOp (Ast.Eq, Var "x", Int 70),
+                              Bool true,
+                              Bool false)))) === VBool true
+
+
 (* Test Match *)
 
 (* Match an int on var x *)
