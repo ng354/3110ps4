@@ -25,7 +25,6 @@ and environment = (var * value ref) list
   * try to match a value against a pattern. If the match succeeds, return an
   * environment containing all of the bindings. If it fails, return None.
   *)
-
 let rec find_match (p : pattern) (v : value) : environment option =
   match p,v with
   | PUnit, VUnit -> Some []
@@ -97,6 +96,10 @@ let string_of_value = Printer.make_string_of format_value
 (** eval **********************************************************************)
 (******************************************************************************)
 
+(* [bin_operation op e1 e2] matches and evalutes a binary operation
+* - [op] the operation to be performed
+* - [e1] the first argument to the operation
+* - [e2] the second argument to the operation *)
 let rec bin_operation op e1 e2 =
   match (op, e1, e2) with
   | (Plus, VInt n1, VInt n2) -> VInt (n1+n2)
@@ -142,17 +145,9 @@ let change_env env v e1 =
   with
     Not_found -> (v,ref e1)::env
 
-(* [app_env env e1 e2] will return new environment for the function e1
-* with the new binding from e2 so that we can make the appropriate closure *)
-let app_env env e1 e2 =
-  match e1 with
-  | Fun(x,e) ->
-    change_env env x e2
-  | _ -> env
-
 (* [match_patterns v plist] finds the matching pattern of
 * - value [v] with
-* - pattern list [plist]
+* - pattern list [plist], and
 * - returns an option of the  pattern's evaluation expression
 *   and its environment *)
 let rec match_patterns (v:value) (plist:(pattern*expr) list)
@@ -161,10 +156,10 @@ let rec match_patterns (v:value) (plist:(pattern*expr) list)
   | [] -> None
   | (p, e)::t ->
     (match find_match p v with
-      | Some env ->
-        Some (env,e)
-      | None -> match_patterns v t)
+    | Some env ->Some (env,e)
+    | None -> match_patterns v t)
 
+(* [eval env e] evalutes expression [e] with environment [env] *)
 let rec eval env e =
   match e with
   | Unit -> VUnit
@@ -172,45 +167,45 @@ let rec eval env e =
   | Bool b -> VBool(b)
   | String s ->  VString(s)
   | BinOp (op, e1,e2)  ->
-    let expr1 = eval env e1 in
-    let expr2 = eval env e2 in
-    bin_operation op expr1 expr2
+      let expr1 = eval env e1 in
+      let expr2 = eval env e2 in
+      bin_operation op expr1 expr2
   | If (e1,e2,e3) ->
-    let expr1 = eval env e1 in
-    (match expr1 with
-      | VBool true -> eval env e2
-      | VBool false -> eval env e3
-      | _ -> VError "Not a boolean value")
+      let expr1 = eval env e1 in
+      (match expr1 with
+        | VBool true -> eval env e2
+        | VBool false -> eval env e3
+        | _ -> VError "Not a boolean value")
   | Var x ->
-    (try
-      !(List.assoc x env)
-    with
-      Not_found -> VError (x^"variable not found"))
+      (try
+        !(List.assoc x env)
+      with
+        Not_found -> VError (x^" variable not found"))
   | Let (v,e1,e2) ->
-    let expr1 = eval env e1 in
-    let new_env = change_env env v expr1 in
-    eval new_env e2
+      let expr1 = eval env e1 in
+      let new_env = change_env env v expr1 in
+      eval new_env e2
   | LetRec (v,e1,e2) ->
-    let v_ref = ref (VError "dummy") in
-    let new_env = (v,v_ref)::env in
-    let evaluated = eval new_env e1 in
-    v_ref:= evaluated;
-    eval new_env e2
+      let v_ref = ref (VError "dummy") in
+      let new_env = (v,v_ref)::env in
+      let evaluated = eval new_env e1 in
+      v_ref:= evaluated;
+      eval new_env e2
   | App(e1,e2) ->
-    let expr2 = eval env e2 in
-    (match (eval env e1) with
-    | VClosure(var, expr, env) -> eval (change_env env var expr2) expr
-    | _ -> VError "Not a function, cannot be applied")
+      let expr2 = eval env e2 in
+      (match (eval env e1) with
+      | VClosure(var, expr, env) -> eval (change_env env var expr2) expr
+      | _ -> VError "Not a function, cannot be applied")
   | Fun(v,e) ->  VClosure(v, e, env)
   | Pair (e1,e2) ->
-    let expr1 = eval env e1 in
-    let expr2 = eval env e2 in
-    VPair(expr1, expr2)
+      let expr1 = eval env e1 in
+      let expr2 = eval env e2 in
+      VPair(expr1, expr2)
   | Variant (c, e1) ->
-    let expr1 = eval env e1 in
-    VVariant(c, expr1)
+      let expr1 = eval env e1 in
+      VVariant(c, expr1)
   | Match (e1, p) ->
-    let expr1 = eval env e1 in
-    (match match_patterns expr1 p with
-        | Some (sub_env,expr) ->  eval (sub_env@env) expr
-        | None -> VError "No pattern matched")
+      let expr1 = eval env e1 in
+      (match match_patterns expr1 p with
+      | Some (sub_env,expr) ->  eval (sub_env@env) expr
+      | None -> VError "No pattern matched")

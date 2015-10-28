@@ -92,7 +92,7 @@ let newvar () : typ =
 (*returns the constraints for variants*)
 let rec collect_variant (specs:variant_spec list) (t:typ) (c:constructor) (e:typ) =
   match specs with
-  | [] -> failwith "variant type does not exist, raise exception"
+  | [] -> failwith "variant for constructor type does not exist"
   | v_spec::tl ->
     let spec_constructors = v_spec.constructors in
     try
